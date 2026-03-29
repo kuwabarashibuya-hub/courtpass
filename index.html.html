@@ -6,6 +6,7 @@
 <title>CourtPass — 統合プラットフォーム</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 /* ===== RESET & TOKENS ===== */
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -539,7 +540,7 @@ label{font-size:10px;font-weight:700;letter-spacing:0.5px;color:var(--a-ink2);te
         <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--u-accent),var(--u-accent3));display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:var(--u-bg)">山</div>
         <div>
           <div style="font-size:18px;font-weight:700">山田 太郎</div>
-          <div style="font-size:11px;color:var(--u-text2)">yamada.taro@example.com</div>
+          <div style="font-size:11px;color:var(--u-text2)"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="7108101c1015105f0510031e311409101c011d145f121e1c">[email&#160;protected]</a></div>
         </div>
       </div>
       <div class="u-stat-grid" id="uStatGrid"></div>
@@ -898,39 +899,77 @@ label{font-size:10px;font-weight:700;letter-spacing:0.5px;color:var(--a-ink2);te
 
 <div class="toast" id="toast"></div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+// ==================== SUPABASE SETUP ====================
+const SUPABASE_URL = 'https://fgqnmbeqaongzgxntpfs.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZncW5tYmVxYW9uZ3pneG50cGZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2OTg0NjUsImV4cCI6MjA5MDI3NDQ2NX0.45rp-yP5-DDMmweaPi4dW-nOq6S7jyYREA6kvs8OXnI';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 // ==================== SHARED DATA STORE ====================
 const DB = {
-  facilities: [
-    {id:1,name:'横浜テニスパーク',sport:'tennis',emoji:'🎾',addr:'横浜市中区山下町1-1',station:'元町・中華街駅 徒歩5分',tel:'045-111-2222',desc:'全天候型テニスコート4面。プロコーチによるレッスンも対応。',price:1800,priceWend:2200,priceEarly:1400,priceNight:2000,open:'07:00',close:'22:00',courts:4,capacity:16,amenities:['シャワー室','ロッカー','駐車場'],available:true,rating:4.7,reviewCount:42},
-    {id:2,name:'みなとみらいテニスクラブ',sport:'tennis',emoji:'🎾',addr:'横浜市西区みなとみらい2-2',station:'みなとみらい駅 徒歩3分',tel:'045-222-3333',desc:'みなとみらいの夜景を眺めながらプレーできる絶好のロケーション。',price:2200,priceWend:2600,priceEarly:1800,priceNight:2400,open:'08:00',close:'21:00',courts:6,capacity:24,amenities:['シャワー室','コーチング'],available:false,rating:4.5,reviewCount:31},
-    {id:3,name:'港南フットサルガーデン',sport:'futsal',emoji:'⚽',addr:'横浜市港南区上大岡1-3',station:'上大岡駅 徒歩7分',tel:'045-333-4444',desc:'人工芝コート3面。夜間照明完備で夜遅くまで楽しめます。',price:3500,priceWend:4000,priceEarly:2800,priceNight:3800,open:'09:00',close:'23:00',courts:3,capacity:18,amenities:['夜間照明','シャワー室','売店'],available:true,rating:4.8,reviewCount:67},
-    {id:4,name:'戸塚スポーツセンター',sport:'futsal',emoji:'⚽',addr:'横浜市戸塚区戸塚町1-4',station:'戸塚駅 徒歩5分',tel:'045-444-5555',desc:'リーズナブルな料金で気軽に利用できる地域密着型施設。',price:2800,priceWend:3200,priceEarly:2200,priceNight:3000,open:'10:00',close:'21:00',courts:2,capacity:12,amenities:['シューズレンタル','駐車場'],available:true,rating:4.3,reviewCount:28},
-    {id:5,name:'磯子バスケットアリーナ',sport:'basket',emoji:'🏀',addr:'横浜市磯子区磯子1-5',station:'磯子駅 徒歩2分',tel:'045-555-6666',desc:'NBA規格フルコート2面。音響設備も充実し本格的な環境でプレーできます。',price:4200,priceWend:5000,priceEarly:3500,priceNight:4500,open:'08:00',close:'22:00',courts:2,capacity:20,amenities:['シャワー室','ロッカー','コーチング'],available:true,rating:4.9,reviewCount:55},
-    {id:6,name:'鶴見バスケットパーク',sport:'basket',emoji:'🏀',addr:'横浜市鶴見区鶴見1-6',station:'鶴見駅 徒歩8分',tel:'045-666-7777',desc:'3on3コート専用エリアあり。初心者から上級者まで幅広く対応。',price:3000,priceWend:3500,priceEarly:2500,priceNight:3200,open:'09:00',close:'20:00',courts:3,capacity:15,amenities:['3on3コート','駐車場'],available:false,rating:4.4,reviewCount:19},
-  ],
-  bookings: [
-    {id:'B2840',facilityId:5,date:'2026/03/22',time:'10:00〜11:00',court:'メインコート',price:4200,status:'confirmed',user:'山田 太郎',sport:'basket'},
-    {id:'B2839',facilityId:3,date:'2026/03/22',time:'11:00〜12:00',court:'1番コート',price:3500,status:'confirmed',user:'田中 花子',sport:'futsal'},
-    {id:'B2838',facilityId:5,date:'2026/03/22',time:'14:00〜16:00',court:'サブコート',price:8400,status:'pending',user:'鈴木 次郎',sport:'basket'},
-    {id:'B2837',facilityId:1,date:'2026/03/21',time:'18:00〜19:00',court:'Aコート',price:1800,status:'confirmed',user:'高橋 美咲',sport:'tennis'},
-    {id:'B2836',facilityId:3,date:'2026/03/21',time:'10:00〜11:00',court:'2番コート',price:3500,status:'cancelled',user:'渡辺 健一',sport:'futsal'},
-    {id:'B2835',facilityId:1,date:'2026/03/20',time:'19:00〜20:00',court:'Bコート',price:1800,status:'confirmed',user:'伊藤 さくら',sport:'tennis'},
-    {id:'B2834',facilityId:5,date:'2026/03/25',time:'14:00〜16:00',court:'メインコート',price:8400,status:'upcoming',user:'山田 太郎',sport:'basket'},
-    {id:'B2833',facilityId:3,date:'2026/04/01',time:'19:00〜20:00',court:'1番コート',price:3500,status:'upcoming',user:'山田 太郎',sport:'futsal'},
-  ],
-  reviews: [
-    {id:'R001',facilityId:1,user:'田中K',rating:5,text:'コートのコンディションが最高！スタッフも親切で予約もスムーズでした。',date:'2026/03/15'},
-    {id:'R002',facilityId:3,user:'鈴木S',rating:4,text:'人工芝のクオリティが高く、夜間照明も明るくて使いやすい。ロッカーが少し狭い。',date:'2026/03/10'},
-    {id:'R003',facilityId:5,user:'佐藤M',rating:5,text:'NBA規格とは思えないほど手頃な価格。音響もよくて盛り上がります！',date:'2026/03/05'},
-    {id:'R004',facilityId:2,user:'高橋A',rating:3,text:'コースは綺麗ですが、更衣室の空調が弱くて夏は辛い。改善を期待します。',date:'2026/03/12'},
-    {id:'R005',facilityId:3,user:'渡辺T',rating:5,text:'定期的に使っています。スタッフのフレンドリーさが毎回最高！',date:'2026/03/18'},
-  ],
-  favorites: new Set([1,5]),
-  liveFeed: [],
-  nextBkId: 2841,
-  nextRevId: 6,
+  facilities:[],bookings:[],reviews:[],
+  favorites:new Set([]),liveFeed:[],nextBkId:1,nextRevId:1,
 };
+const SEED=[
+  {name:'横浜テニスパーク',sport:'tennis',addr:'横浜市中区山下町1-1',price:1800,available:true,rating:4.7,open:'07:00',close:'22:00',courts:4},
+  {name:'みなとみらいテニスクラブ',sport:'tennis',addr:'横浜市西区みなとみらい2-2',price:2200,available:false,rating:4.5,open:'08:00',close:'21:00',courts:6},
+  {name:'港南フットサルガーデン',sport:'futsal',addr:'横浜市港南区上大岡1-3',price:3500,available:true,rating:4.8,open:'09:00',close:'23:00',courts:3},
+  {name:'戸塚スポーツセンター',sport:'futsal',addr:'横浜市戸塚区戸塚町1-4',price:2800,available:true,rating:4.3,open:'10:00',close:'21:00',courts:2},
+  {name:'磯子バスケットアリーナ',sport:'basket',addr:'横浜市磯子区磯子1-5',price:4200,available:true,rating:4.9,open:'08:00',close:'22:00',courts:2},
+  {name:'鶴見バスケットパーク',sport:'basket',addr:'横浜市鶴見区鶴見1-6',price:3000,available:false,rating:4.4,open:'09:00',close:'20:00',courts:3},
+];
+function sportEmoji(s){return{tennis:'🎾',futsal:'⚽',basket:'🏀'}[s]||'🏟️';}
+function toLocal(f){return{...f,emoji:sportEmoji(f.sport),reviewCount:f.review_count||0,facilityId:f.id};}
+function bkLocal(b){return{...b,facilityId:b.facility_id,user:b.user_name,id:'B'+b.id};}
+function rvLocal(r){return{...r,facilityId:r.facility_id,user:r.user_name,id:'R'+r.id};}
+
+async function loadAll(){
+  // facilities
+  let{data:facs}=await supabase.from('facilities').select('*').order('id');
+  if(!facs||facs.length===0){
+    const{data:ins}=await supabase.from('facilities').insert(SEED).select();
+    facs=ins||[];
+  }
+  DB.facilities=facs.map(toLocal);
+  // bookings
+  const{data:bks}=await supabase.from('bookings').select('*').order('id',{ascending:false});
+  DB.bookings=(bks||[]).map(bkLocal);
+  // reviews
+  const{data:rvs}=await supabase.from('reviews').select('*').order('id',{ascending:false});
+  DB.reviews=(rvs||[]).map(rvLocal);
+}
+
+async function saveBooking(bk){
+  const{data,error}=await supabase.from('bookings').insert({
+    facility_id:bk.facilityId,user_name:bk.user||'山田 太郎',
+    date:bk.date,time:bk.time,court:bk.court||'Aコート',
+    price:bk.price,status:bk.status||'upcoming',sport:bk.sport,
+  }).select().single();
+  if(error){console.error(error);return null;}
+  return bkLocal(data);
+}
+
+async function saveReview(rv){
+  const{data,error}=await supabase.from('reviews').insert({
+    facility_id:rv.facilityId,user_name:rv.user||'山田T',
+    rating:rv.rating,text:rv.text,
+    date:new Date().toLocaleDateString('ja'),
+  }).select().single();
+  if(error){console.error(error);return null;}
+  return rvLocal(data);
+}
+
+async function saveFacilityToDB(fac){
+  const payload={name:fac.name,sport:fac.sport,addr:fac.addr,
+    price:parseInt(fac.price)||0,available:true,rating:0,
+    open:fac.open,close:fac.close,courts:parseInt(fac.courts)||1};
+  if(fac.id){
+    const{data}=await supabase.from('facilities').update(payload).eq('id',fac.id).select().single();
+    return data?toLocal(data):null;
+  }
+  const{data}=await supabase.from('facilities').insert(payload).select().single();
+  return data?toLocal(data):null;
+}
 
 // Compute derived stats
 function getStats() {
@@ -1115,22 +1154,25 @@ function uSelTime(el,t){
   document.getElementById('udConfirm').style.display='block';
   setTimeout(()=>document.getElementById('udConfirm').scrollIntoView({behavior:'smooth',block:'nearest'}),100);
 }
-function uConfirmBooking(){
+async function uConfirmBooking(){
   const f=uSelectedFacility;
   const h=parseInt(uSelectedTime);
   const end=`${String(h+1).padStart(2,'0')}:00`;
   showModal(`予約を確定しますか？`,`${f.name}\n${uSelectedDate} ${uSelectedTime}〜${end}\n¥${f.price.toLocaleString()}`,()=>{
-    const bk={
-      id:`B${DB.nextBkId++}`,facilityId:f.id,date:uSelectedDate,
+    const bkData={facilityId:f.id,date:uSelectedDate,
       time:`${uSelectedTime}〜${end}`,court:'Aコート',price:f.price,
-      status:'upcoming',user:'山田 太郎',sport:f.sport
-    };
-    DB.bookings.unshift(bk);
-    pushFeed(f.emoji,`<strong>山田 太郎</strong>が ${f.name} を予約しました (${uSelectedDate} ${uSelectedTime}〜${end})`);
-    closeModal();
-    showToast('🎉 予約が完了しました！','u');
-    uSwitchPage('mypage');
-    if(currentMode==='admin') refreshAdminStats();
+      status:'upcoming',user:'山田 太郎',sport:f.sport};
+    const saved=await saveBooking(bkData);
+    if(saved){
+      DB.bookings.unshift(saved);
+      pushFeed(f.emoji,`<strong>山田 太郎</strong>が ${f.name} を予約しました (${uSelectedDate} ${uSelectedTime}〜${end})`);
+      closeModal();
+      showToast('🎉 予約が完了しました！','u');
+      uSwitchPage('mypage');
+      refreshAdminStats();
+    } else {
+      showToast('⚠️ 予約の保存に失敗しました','u');
+    }
   });
 }
 function uRenderMyPage(){
@@ -1172,22 +1214,27 @@ function uSetStar(n){
   uRating=n;
   document.querySelectorAll('.u-star-btn').forEach((b,i)=>b.classList.toggle('on',i<n));
 }
-function uSubmitReview(){
+async function uSubmitReview(){
   const fid=parseInt(document.getElementById('uRevFacSel').value);
   const txt=document.getElementById('uRevText').value.trim();
   if(!fid){showToast('⚠️ 施設を選択してください','u');return;}
   if(!uRating){showToast('⚠️ 評価を選択してください','u');return;}
   if(!txt){showToast('⚠️ コメントを入力してください','u');return;}
   const f=DB.facilities.find(x=>x.id===fid);
-  DB.reviews.unshift({id:`R${DB.nextRevId++}`,facilityId:fid,user:'山田T',rating:uRating,text:txt,date:'2026/03/22'});
-  f.reviewCount++;
-  document.getElementById('uRevText').value='';
-  document.getElementById('uRevFacSel').value='';
-  uSetStar(0);uRating=0;
-  uRenderReviews();
-  pushFeed('⭐',`<strong>山田T</strong>が ${f.name} に★${uRating}のレビューを投稿しました`);
-  showToast('⭐ レビューを投稿しました！','u');
-  if(currentMode==='admin') renderAdminReviews();
+  const saved=await saveReview({facilityId:fid,user:'山田T',rating:uRating,text:txt});
+  if(saved){
+    DB.reviews.unshift(saved);
+    f.reviewCount++;
+    document.getElementById('uRevText').value='';
+    document.getElementById('uRevFacSel').value='';
+    uSetStar(0);uRating=0;
+    uRenderReviews();
+    pushFeed('⭐',`<strong>山田T</strong>が ${f.name} に★${uRating}のレビューを投稿しました`);
+    showToast('⭐ レビューを投稿しました！','u');
+    if(currentMode==='admin') renderAdminReviews();
+  } else {
+    showToast('⚠️ レビューの保存に失敗しました','u');
+  }
 }
 
 // ==================== ADMIN APP ====================
@@ -1466,7 +1513,7 @@ function aHideForm(){
   document.getElementById('aFacilityForm').style.display='none';
   aRenderFacCards();
 }
-function aSaveFacility(){
+async function aSaveFacility(){
   const name=document.getElementById('afName').value.trim();
   if(!name){showToast('⚠️ 施設名を入力してください','a');return;}
   const data={
@@ -1485,20 +1532,25 @@ function aSaveFacility(){
     capacity:parseInt(document.getElementById('afCap').value)||10,
     amenities:[...document.querySelectorAll('#aAmenityTags .a-tag.active')].map(t=>t.textContent.trim()),
   };
-  if(aEditFacId){
-    const f=DB.facilities.find(x=>x.id===aEditFacId);
-    if(f) Object.assign(f,data,{emoji:f.emoji,available:f.available,rating:f.rating,reviewCount:f.reviewCount});
-    showToast('✓ 施設情報を更新しました','a');
-    pushFeed('🏟️',`<strong>${name}</strong>の施設情報が更新されました`);
+  const payload={...data,id:aEditFacId||null};
+  const saved=await saveFacilityToDB(payload);
+  if(saved){
+    if(aEditFacId){
+      const idx=DB.facilities.findIndex(x=>x.id===aEditFacId);
+      if(idx>=0) DB.facilities[idx]=saved;
+      showToast('✓ 施設情報を更新しました','a');
+      pushFeed('🏟️',`<strong>${name}</strong>の施設情報が更新されました`);
+    } else {
+      DB.facilities.push(saved);
+      showToast('🎉 施設を登録しました！','a');
+      pushFeed('🏟️',`新施設 <strong>${name}</strong> が登録されました`);
+      uRenderFacilities();
+    }
+    aHideForm();
+    refreshAdminStats();
   } else {
-    const emoji={tennis:'🎾',futsal:'⚽',basket:'🏀'}[data.sport]||'🏟️';
-    DB.facilities.push({id:Date.now(),...data,emoji,available:true,rating:'-',reviewCount:0});
-    showToast('🎉 施設を登録しました！','a');
-    pushFeed('🏟️',`新施設 <strong>${name}</strong> が登録されました`);
-    uRenderFacilities();
+    showToast('⚠️ 保存に失敗しました','a');
   }
-  aHideForm();
-  refreshAdminStats();
 }
 
 // ==================== EXPORT ====================
@@ -1655,14 +1707,15 @@ function showToast(msg,type='u'){
   clearTimeout(toastTimer);
   toastTimer=setTimeout(()=>t.classList.remove('show'),3000);
 }
-
-// ==================== INIT ====================
-window.onload=()=>{
+window.onload=async()=>{
+  showToast('📡 データ読み込み中...','u');
+  await loadAll();
   uRenderFacilities();
   refreshAdminStats();
   initAdminCharts();
   renderLiveFeed();
   renderAdminBookings();
+  showToast('✅ 読み込み完了','u');
 };
 </script>
 </body>
