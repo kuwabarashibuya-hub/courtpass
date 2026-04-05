@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>施設詳細 — CourtPass</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#0a0a0f;--surface:#13131a;--surface2:#1c1c27;--border:#2a2a3a;
+  --accent:#00e5a0;--accent2:#ff4d6d;--accent3:#4d79ff;
+  --text:#f0f0f5;--text2:#8888aa;--text3:#555570;
+  --tennis:#c8f000;--futsal:#ff6b35;--basket:#4d79ff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-serif;min-height:100vh;padding-bottom:100px;}
+
+/* HEADER */
+.header{position:sticky;top:0;z-index:100;background:rgba(10,10,15,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);height:52px;display:flex;align-items:center;padding:0 16px;gap:12px;}
+.back-btn{display:flex;align-items:center;gap:6px;color:var(--text2);font-size:13px;cursor:pointer;text-decoration:none;transition:color .2s;}
+.back-btn:hover{color:var(--accent);}
+.header-logo{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:3px;color:var(--accent);margin-left:auto;}
+
+/* HERO */
+.hero{height:200px;display:flex;align-items:center;justify-content:center;font-size:80px;position:relative;}
+.hero.tennis{background:linear-gradient(135deg,#1a2400,#2d4000);}
+.hero.futsal{background:linear-gradient(135deg,#1f0d00,#3a1500);}
+.hero.basket{background:linear-gradient(135deg,#000d1f,#001440);}
+.sport-badge{position:absolute;top:14px;left:14px;font-size:10px;font-weight:700;letter-spacing:1px;padding:3px 9px;border-radius:4px;text-transform:uppercase;}
+.sport-badge.tennis{background:var(--tennis);color:#0a0a0f;}
+.sport-badge.futsal{background:var(--futsal);color:#fff;}
+.sport-badge.basket{background:var(--basket);color:#fff;}
+.fav-btn{position:absolute;top:14px;right:14px;background:rgba(0,0,0,.5);border:none;border-radius:50%;width:36px;height:36px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;color:white;transition:all .2s;}
+.fav-btn.on{color:#ff4d6d;}
+
+/* MAIN */
+.main{padding:16px;max-width:640px;margin:0 auto;}
+.facility-name{font-size:22px;font-weight:700;margin-bottom:4px;}
+.facility-sub{font-size:12px;color:var(--text2);margin-bottom:12px;}
+.price-badge{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--accent);letter-spacing:1px;}
+.price-sub{font-size:10px;color:var(--text2);}
+
+/* TABS */
+.tabs{display:flex;gap:0;background:var(--surface2);border-radius:10px;padding:3px;margin:16px 0;overflow-x:auto;scrollbar-width:none;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{padding:9px 16px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;color:var(--text2);white-space:nowrap;transition:all .2s;flex-shrink:0;}
+.tab.active{background:var(--accent);color:var(--bg);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;animation:fadeIn .25s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
+
+/* INFO GRID */
+.info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+.info-box{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:10px;text-align:center;}
+.info-label{font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;}
+.info-value{font-size:13px;font-weight:600;}
+
+/* EXTRA INFO */
+.info-section{margin-bottom:14px;}
+.info-section-label{font-size:10px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
+.info-section-value{font-size:13px;color:var(--text2);line-height:1.6;}
+.info-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
+.info-tag{background:var(--surface2);border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:20px;font-size:11px;}
+
+/* CALENDAR */
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:10px;}
+.cal-hdr{text-align:center;font-size:9px;color:var(--text3);padding:3px 0;}
+.cal-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:12px;border-radius:7px;cursor:pointer;transition:all .15s;background:var(--surface);border:1px solid var(--border);}
+.cal-day:hover:not(.past):not(.empty){border-color:var(--accent);color:var(--accent);}
+.cal-day.sel{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:700;}
+.cal-day.today{border-color:var(--accent);color:var(--accent);}
+.cal-day.past{color:var(--text3);cursor:not-allowed;}
+.cal-day.empty{background:transparent;border-color:transparent;cursor:default;}
+
+/* TIME SLOTS */
+.slots{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px;}
+.slot{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:8px;text-align:center;cursor:pointer;transition:all .15s;}
+.slot .t{font-size:11px;font-weight:700;}
+.slot .s{font-size:9px;color:var(--text2);}
+.slot:hover:not(.bkd){border-color:var(--accent);}
+.slot.sel{background:rgba(0,229,160,.1);border-color:var(--accent);color:var(--accent);}
+.slot.bkd{opacity:.35;cursor:not-allowed;}
+
+/* CONFIRM BOX */
+.confirm-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;}
+.confirm-row{display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;}
+.confirm-row .k{color:var(--text2);}
+.confirm-row.tot .v{font-size:16px;font-weight:700;color:var(--accent);}
+
+/* LOTTERY */
+.lottery-card{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:14px;margin-bottom:10px;}
+.lottery-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:3px 8px;border-radius:5px;}
+.lottery-badge.open{background:rgba(0,229,160,.1);color:var(--accent);}
+.lottery-badge.closed{background:var(--surface2);color:var(--text3);}
+.lottery-badge.drawn{background:rgba(77,121,255,.1);color:var(--accent3);}
+
+/* RULES */
+.rules-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px;font-size:13px;color:var(--text2);line-height:1.8;}
+
+/* STICKY BOTTOM */
+.sticky-bottom{position:fixed;bottom:0;left:0;right:0;z-index:80;background:rgba(10,10,15,.96);backdrop-filter:blur(12px);border-top:1px solid var(--border);padding:12px 16px;display:flex;gap:8px;}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:12px 18px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:none;font-family:'Noto Sans JP',sans-serif;transition:all .2s;white-space:nowrap;}
+.btn-primary{background:var(--accent);color:var(--bg);}
+.btn-primary:hover{background:#00c88c;}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent);}
+.sec-lbl{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:10px;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.show{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px;max-width:360px;width:100%;animation:fadeIn .25s ease;}
+.modal h3{font-size:16px;font-weight:700;margin-bottom:6px;}
+.modal p{font-size:12px;color:var(--text2);margin-bottom:18px;line-height:1.6;white-space:pre-line;}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;}
+
+/* TOAST */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(60px);opacity:0;background:var(--surface2);border:1px solid var(--accent);color:var(--accent);padding:11px 20px;border-radius:9px;font-size:12px;font-weight:700;z-index:200;transition:all .3s;white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+
+/* LOADING */
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;color:var(--text2);}
+.loading-spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:16px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <a class="back-btn" href="index.html">← 施設一覧</a>
+  <div class="header-logo">CourtPass</div>
+</div>
+
+<!-- LOADING -->
+<div class="loading" id="loadingEl">
+  <div class="loading-spinner"></div>
+  <div>施設情報を読み込み中...</div>
+</div>
+
+<!-- DETAIL CONTENT -->
+<div id="detailContent" style="display:none">
+  <div class="hero" id="dHero"></div>
+  <div class="main">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+      <div style="flex:1">
+        <div class="facility-name" id="dName"></div>
+        <div class="facility-sub" id="dSub"></div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div class="price-badge" id="dPrice"></div>
+        <div class="price-sub">/ 1時間</div>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab(0)">📋 基本情報</div>
+      <div class="tab" onclick="switchTab(1)">📅 予約する</div>
+      <div class="tab" onclick="switchTab(2)">🎰 抽選</div>
+      <div class="tab" onclick="switchTab(3)">⚠️ ルール</div>
+    </div>
+
+    <!-- TAB 0: 基本情報 -->
+    <div class="tab-panel active" id="panel0">
+      <div class="info-grid" id="dInfoGrid"></div>
+      <div id="dExtraInfo"></div>
+    </div>
+
+    <!-- TAB 1: 予約する -->
+    <div class="tab-panel" id="panel1">
+      <div class="sec-lbl">📅 日程を選択</div>
+      <div class="cal" id="dCal"></div>
+      <div id="dSlotsSection" style="display:none">
+        <div class="sec-lbl" style="margin-top:14px">⏰ 時間帯</div>
+        <div class="slots" id="dSlots"></div>
+      </div>
+      <div id="dConfirm" style="display:none">
+        <div class="confirm-box">
+          <div class="sec-lbl" style="margin-bottom:10px">予約確認</div>
+          <div class="confirm-row"><span class="k">施設</span><span id="cfFac"></span></div>
+          <div class="confirm-row"><span class="k">日程</span><span id="cfDate"></span></div>
+          <div class="confirm-row"><span class="k">時間</span><span id="cfTime"></span></div>
+          <div style="border-top:1px solid var(--border);margin:10px 0;padding-top:10px">
+            <div class="confirm-row tot"><span class="k">合計</span><span class="v" id="cfPrice"></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: 抽選 -->
+    <div class="tab-panel" id="panel2">
+      <div class="sec-lbl">🎰 抽選申し込み</div>
+      <div id="dLotterySlots"></div>
+    </div>
+
+    <!-- TAB 3: ルール -->
+    <div class="tab-panel" id="panel3">
+      <div id="dRules"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ERROR -->
+<div id="errorEl" style="display:none;text-align:center;padding:80px 20px;color:var(--text2)">
+  <div style="font-size:48px;margin-bottom:16px">🏟️</div>
+  <div style="font-size:16px;font-weight:700;margin-bottom:8px">施設が見つかりません</div>
+  <a href="index.html" style="color:var(--accent);font-size:13px">← 施設一覧に戻る</a>
+</div>
+
+<!-- STICKY BOTTOM -->
+<div class="sticky-bottom" id="stickyBottom" style="display:none">
+  <button class="btn btn-secondary" style="flex:1" onclick="switchTab(1)">📅 予約する</button>
+  <button class="btn btn-secondary" style="flex:1" onclick="switchTab(2)">🎰 抽選</button>
+  <button class="btn btn-primary" id="stickyConfirmBtn" style="display:none;flex:1" onclick="confirmBooking()">予約を確定する →</button>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3 id="modalTitle"></h3>
+    <p id="modalBody"></p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal()" style="padding:8px 14px;font-size:12px">閉じる</button>
+      <button class="btn btn-primary" id="modalOkBtn" style="padding:8px 14px;font-size:12px">OK</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://fgqnmbeqaongzgxntpfs.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZncW5tYmVxYW9uZ3pneG50cGZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2OTg0NjUsImV4cCI6MjA5MDI3NDQ2NX0.45rp-yP5-DDMmweaPi4dW-nOq6S7jyYREA6kvs8OXnI';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let facility = null;
+let currentUser = null;
+let selectedDate = null;
+let selectedTime = null;
+
+// ===== INIT =====
+window.onload = async () => {
+  // 認証状態確認
+  const {data:{session}} = await sb.auth.getSession();
+  if(session){
+    currentUser = session.user;
+    const {data:profile} = await sb.from('profiles').select('*').eq('id',session.user.id).single();
+    if(profile) currentUser._profile = profile;
+  }
+
+  // URLからIDを取得
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get('id');
+  if(!id){ showError(); return; }
+
+  // 施設データ取得
+  const {data,error} = await sb.from('facilities').select('*').eq('id',id).single();
+  if(error||!data){ showError(); return; }
+  facility = data;
+
+  // ページタイトル更新
+  document.title = facility.name + ' — CourtPass';
+
+  // 表示
+  renderFacility();
+  renderCalendar();
+  await renderLottery();
+  renderRules();
+
+  document.getElementById('loadingEl').style.display='none';
+  document.getElementById('detailContent').style.display='block';
+  document.getElementById('stickyBottom').style.display='flex';
+};
+
+function showError(){
+  document.getElementById('loadingEl').style.display='none';
+  document.getElementById('errorEl').style.display='block';
+}
+
+// ===== RENDER =====
+function sportEmoji(s){return{tennis:'🎾',futsal:'⚽',basket:'🏀'}[s]||'🏟️';}
+function sportName(s){return{tennis:'テニス',futsal:'フットサル',basket:'バスケット'}[s]||s;}
+
+function renderFacility(){
+  const f = facility;
+  const hero = document.getElementById('dHero');
+  hero.className = 'hero ' + (f.sport||'tennis');
+  hero.innerHTML = `<span class="sport-badge ${f.sport||''}">${sportName(f.sport)}</span>${sportEmoji(f.sport)}`;
+
+  document.getElementById('dName').textContent = f.name;
+  document.getElementById('dSub').textContent = `📍 ${f.addr||''} ${f.station?'· '+f.station:''}`;
+  document.getElementById('dPrice').textContent = f.price ? `¥${f.price.toLocaleString()}` : '要問合せ';
+
+  // 基本情報グリッド
+  document.getElementById('dInfoGrid').innerHTML = `
+    <div class="info-box"><div class="info-label">コート数</div><div class="info-value">${f.courts||'-'}面</div></div>
+    <div class="info-box"><div class="info-label">営業時間</div><div class="info-value" style="font-size:10px">${f.open||''}〜${f.close||''}</div></div>
+    <div class="info-box"><div class="info-label">料金</div><div class="info-value" style="color:var(--accent);font-size:11px">¥${(f.price||0).toLocaleString()}/h</div></div>
+  `;
+
+  // 追加情報
+  let extra = '';
+  if(f.sports_list) extra += `<div class="info-section"><div class="info-section-label">実施可能なスポーツ</div><div class="info-tags">${f.sports_list.split(',').map(s=>`<div class="info-tag">${s.trim()}</div>`).join('')}</div></div>`;
+  if(f.payment) extra += `<div class="info-section"><div class="info-section-label">支払方法</div><div class="info-tags">${f.payment.split(',').map(s=>`<div class="info-tag">${s.trim()}</div>`).join('')}</div></div>`;
+  if(f.contact) extra += `<div class="info-section"><div class="info-section-label">問い合わせ</div><div class="info-section-value">${f.contact}</div></div>`;
+  if(f.rental_items) extra += `<div class="info-section"><div class="info-section-label">レンタル用品</div><div class="info-tags">${f.rental_items.split(',').map(s=>`<div class="info-tag">${s.trim()}</div>`).join('')}</div></div>`;
+  document.getElementById('dExtraInfo').innerHTML = extra;
+}
+
+// ===== CALENDAR =====
+function renderCalendar(){
+  const today = new Date();
+  const cal = document.getElementById('dCal');
+  const days = ['日','月','火','水','木','金','土'];
+  let h = days.map(d=>`<div class="cal-hdr">${d}</div>`).join('');
+  const firstDay = new Date(today.getFullYear(),today.getMonth(),1).getDay();
+  for(let i=0;i<firstDay;i++) h+=`<div class="cal-day empty"></div>`;
+  const dim = new Date(today.getFullYear(),today.getMonth()+1,0).getDate();
+  for(let d=1;d<=dim;d++){
+    const past = d < today.getDate();
+    const isT = d === today.getDate();
+    const ds = `${today.getFullYear()}/${String(today.getMonth()+1).padStart(2,'0')}/${String(d).padStart(2,'0')}`;
+    h += `<div class="cal-day ${past?'past':isT?'today':''}" onclick="${past?'':'selDate(this,\''+ds+'\')'}"> ${d}</div>`;
+  }
+  cal.innerHTML = h;
+}
+
+const bookedSlots = ['10:00','13:00','16:00','19:00'];
+function selDate(el, ds){
+  document.querySelectorAll('.cal-day').forEach(d=>d.classList.remove('sel'));
+  el.classList.add('sel');
+  selectedDate = ds;
+  selectedTime = null;
+  const slots = ['07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00'];
+  document.getElementById('dSlots').innerHTML = slots.map(t=>{
+    const bk = bookedSlots.includes(t);
+    return `<div class="slot ${bk?'bkd':''}" onclick="${bk?'':'selTime(this,\''+t+'\')'}"><div class="t">${t}</div><div class="s">${bk?'満席':'空き'}</div></div>`;
+  }).join('');
+  document.getElementById('dSlotsSection').style.display='block';
+  document.getElementById('dConfirm').style.display='none';
+  document.getElementById('stickyConfirmBtn').style.display='none';
+}
+
+function selTime(el, t){
+  document.querySelectorAll('.slot:not(.bkd)').forEach(s=>s.classList.remove('sel'));
+  el.classList.add('sel');
+  selectedTime = t;
+  const h = parseInt(t);
+  const end = `${String(h+1).padStart(2,'0')}:00`;
+  document.getElementById('cfFac').textContent = facility.name;
+  document.getElementById('cfDate').textContent = selectedDate;
+  document.getElementById('cfTime').textContent = `${t}〜${end}`;
+  document.getElementById('cfPrice').textContent = `¥${(facility.price||0).toLocaleString()}`;
+  document.getElementById('dConfirm').style.display='block';
+  document.getElementById('stickyConfirmBtn').style.display='flex';
+}
+
+// ===== BOOKING =====
+async function confirmBooking(){
+  if(!currentUser){ showToast('⚠️ ログインしてから予約してください'); return; }
+  if(!selectedDate||!selectedTime){ showToast('⚠️ 日程と時間を選択してください'); return; }
+  const h = parseInt(selectedTime);
+  const end = `${String(h+1).padStart(2,'0')}:00`;
+  showModal('予約を確定しますか？', `${facility.name}\n${selectedDate} ${selectedTime}〜${end}\n¥${(facility.price||0).toLocaleString()}`, async()=>{
+    const name = currentUser._profile?.name || currentUser.user_metadata?.name || currentUser.email;
+    const {error} = await sb.from('bookings').insert({
+      facility_id: facility.id,
+      user_name: name,
+      date: selectedDate,
+      time: `${selectedTime}〜${end}`,
+      court: 'Aコート',
+      price: facility.price||0,
+      status: 'upcoming',
+      sport: facility.sport||'tennis'
+    });
+    closeModal();
+    if(error){ showToast('⚠️ 予約の保存に失敗しました'); return; }
+    showToast('🎉 予約が完了しました！');
+    document.getElementById('dConfirm').style.display='none';
+    document.getElementById('stickyConfirmBtn').style.display='none';
+  });
+}
+
+// ===== LOTTERY =====
+async function renderLottery(){
+  const {data:slots} = await sb.from('lottery_slots').select('*').eq('facility_id',facility.id).order('date');
+  const container = document.getElementById('dLotterySlots');
+  if(!slots||!slots.length){
+    container.innerHTML='<div style="text-align:center;padding:40px;color:var(--text3)"><div style="font-size:36px;margin-bottom:10px">🎰</div>現在申し込み可能な抽選はありません</div>';
+    return;
+  }
+  container.innerHTML = slots.map(s=>`
+    <div class="lottery-card">
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
+        <div>
+          <div style="font-size:14px;font-weight:700;margin-bottom:3px">${s.date} ${s.start_time}〜${s.end_time}</div>
+          <div style="font-size:11px;color:var(--text2)">${s.court} · 定員${s.capacity}名 · 締切 ${s.deadline}</div>
+        </div>
+        <span class="lottery-badge ${s.status}">${s.status==='open'?'受付中':s.status==='drawn'?'抽選済':'締切'}</span>
+      </div>
+      ${s.status==='open'?`<button class="btn btn-secondary" style="width:100%;padding:10px" onclick="applyLottery(${s.id},'${s.date} ${s.start_time}〜${s.end_time}')">🎰 抽選に申し込む</button>`:''}
+    </div>`).join('');
+}
+
+async function applyLottery(slotId, label){
+  if(!currentUser){ showToast('⚠️ ログインしてから申し込んでください'); return; }
+  const {data:existing} = await sb.from('lottery_entries').select('id').eq('slot_id',slotId).eq('user_id',currentUser.id);
+  if(existing&&existing.length>0){ showToast('⚠️ すでに申し込み済みです'); return; }
+  showModal('抽選に申し込みますか？', label, async()=>{
+    const name = currentUser._profile?.name||currentUser.user_metadata?.name||currentUser.email;
+    const {error} = await sb.from('lottery_entries').insert({
+      slot_id:slotId, user_id:currentUser.id,
+      user_name:name, phone:currentUser._profile?.phone||'',
+      status:'pending', is_guest:false
+    });
+    closeModal();
+    if(error){ showToast('⚠️ 申し込みに失敗しました'); return; }
+    showToast('🎰 抽選に申し込みました！');
+    renderLottery();
+  });
+}
+
+// ===== RULES =====
+function renderRules(){
+  const f = facility;
+  let html = '';
+  if(f.lottery_rules) html += `<div style="margin-bottom:16px"><div class="sec-lbl">🎰 抽選ルール</div><div class="rules-box">${f.lottery_rules}</div></div>`;
+  if(f.notes) html += `<div style="margin-bottom:16px"><div class="sec-lbl">⚠️ 注意事項</div><div class="rules-box">${f.notes}</div></div>`;
+  if(!html) html = '<div style="text-align:center;padding:40px;color:var(--text3)">ルール・注意事項はまだ登録されていません</div>';
+  document.getElementById('dRules').innerHTML = html;
+}
+
+// ===== TAB =====
+function switchTab(n){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===n));
+  document.querySelectorAll('.tab-panel').forEach((p,i)=>p.classList.toggle('active',i===n));
+}
+
+// ===== MODAL =====
+function showModal(title,body,onOk){
+  document.getElementById('modalTitle').textContent=title;
+  document.getElementById('modalBody').textContent=body;
+  document.getElementById('modal').classList.add('show');
+  document.getElementById('modalOkBtn').onclick=onOk;
+}
+function closeModal(){ document.getElementById('modal').classList.remove('show'); }
+
+// ===== TOAST =====
+let toastTimer;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),3000);
+}
+</script>
+</body>
+</html>
