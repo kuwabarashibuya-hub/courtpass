@@ -463,22 +463,10 @@ label{font-size:10px;font-weight:700;letter-spacing:0.5px;color:var(--a-ink2);te
         <h1>近くの<em>コート</em>を<br>今すぐ予約</h1>
         <p>テニス・フットサル・バスケ 全施設対応 — リアルタイム同期</p>
       </div>
-      <!-- 検索タブ -->
-      <div style="display:flex;gap:0;background:var(--u-surface2);border-radius:10px;padding:3px;margin-bottom:12px;width:fit-content">
-        <div id="sTab0" onclick="switchSearchTab(0)" style="padding:6px 16px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;background:var(--u-accent);color:var(--u-bg);transition:all 0.2s">🏟️ 施設名</div>
-        <div id="sTab1" onclick="switchSearchTab(1)" style="padding:6px 16px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;color:var(--u-text2);transition:all 0.2s">📍 場所</div>
-        <div id="sTab2" onclick="switchSearchTab(2)" style="padding:6px 16px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;color:var(--u-text2);transition:all 0.2s">📅 日程</div>
-      </div>
-      <!-- 施設名検索 -->
-      <div id="sPanel0" class="u-search-bar">
-        <input class="u-input" id="uSearchInput" placeholder="施設名で検索..." autocomplete="new-password" name="search_facility">
+      <!-- 統合検索 -->
+      <div class="u-search-bar" style="margin-bottom:8px">
+        <input class="u-input" id="uSearchInput" placeholder="施設名・エリアで検索..." autocomplete="new-password" name="search_facility">
         <button class="u-btn" onclick="uFilter()">検索</button>
-        <button class="u-btn sec" onclick="resetSearch()" style="padding:10px 14px;white-space:nowrap">✕</button>
-      </div>
-      <!-- 場所検索 -->
-      <div id="sPanel1" class="u-search-bar" style="display:none">
-        <input class="u-input" id="uSearchLocation" placeholder="エリア・駅名・住所で検索..." autocomplete="off">
-        <button class="u-btn" onclick="uFilterByLocation()">検索</button>
         <button class="u-btn sec" onclick="resetSearch()" style="padding:10px 14px;white-space:nowrap">✕</button>
       </div>
       <!-- 日程検索 -->
